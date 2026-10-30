@@ -3,80 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة نتائج الطلاب الشاملة</title>
+    <title>بوابة الطالب - الاستعلام عن النتائج</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #e9ecef; margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: Tahoma, sans-serif; background-color: #eef2f3; margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         button { background-color: #007bff; color: white; padding: 12px; border: none; border-radius: 5px; width: 100%; font-size: 16px; cursor: pointer; }
         button:hover { background-color: #0056b3; }
-        #resultBox { margin-top: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; display: none; }
-        .error { color: red; text-align: center; font-weight: bold; margin-top: 15px; }
+        .result-box { margin-top: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; display: none; }
+        .error { color: red; text-align: center; font-weight: bold; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🎓 بوابة نتائج الطلاب الشاملة</h2>
+    <h2>استعلام عن نتائج الطلاب</h2>
     
     <div class="form-group">
-        <label>أدخل اسمك الثلاثي:</label>
-        <input type="text" id="studentSearchName" placeholder="اكتب اسمك تماماً كما أدخله الأستاذ">
+        <label>اسم الطالب:</label>
+        <input type="text" id="searchName" placeholder="أدخل اسمك الثنائي أو الثلاثي">
     </div>
 
     <div class="form-group">
-        <label>أدخل رقم القيد (كلمة المرور):</label>
-        <input type="password" id="studentSearchID" placeholder="رقم القيد الخاص بك">
+        <label>رقم القيد:</label>
+        <input type="text" id="searchId" placeholder="أدخل رقم القيد الخاص بك">
     </div>
 
-    <button onclick="searchResult()">عرض كشف الدرجات</button>
+    <button onclick="searchGrade()">عرض النتيجة</button>
 
-    <div id="resultBox">
-        <h3>نتيجة الطالب: <span id="resName"></span></h3>
-        <p><b>المادة:</b> <span id="resSubject"></span></p>
-        <p><b>الأستاذ:</b> <span id="resTeacher"></span></p>
-        <p><b>أعمال السنة (من 40):</b> <span id="resCW"></span></p>
-        <p><b>الامتحان النهائي (من 60):</b> <span id="resFE"></span></p>
-        <p><b>المجموع النهائي (من 100):</b> <span id="resTotal" style="color: green; font-weight: bold;"></span></p>
+    <div id="errorMsg" class="error">علينا التأكد من البيانات، لم يتم العثور على نتيجة مطابقة!</div>
+
+    <div id="resultBox" class="result-box">
+        <h3>نتيجة الطالب:</h3>
+        <p><strong>اسم الطالب:</strong> <span id="resName"></span></p>
+        <p><strong>رقم القيد:</strong> <span id="resId"></span></p>
+        <p><strong>المادة:</strong> <span id="resSubject"></span></p>
+        <p><strong>أعمال السنة:</strong> <span id="resCourseWork"></span></p>
+        <p><strong>الامتحان النهائي:</strong> <span id="resFinal"></span></p>
+        <p><strong>المجموع الكلي:</strong> <span id="resTotal" style="color: green; font-weight: bold;"></span></p>
     </div>
-
-    <div id="errorMsg" class="error"></div>
 </div>
 
-<script>
-    function searchResult() {
-        const sName = document.getElementById('studentSearchName').value.trim();
-        const sID = document.getElementById('studentSearchID').value.trim();
+<!-- ربط فايربيس (Firebase SDKs) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAkKRCEo0GUEdLQ94LUD18ctn2oJX6CNZM",
+      authDomain: "schoolgrades-9a12b.firebaseapp.com",
+      projectId: "schoolgrades-9a12b",
+      storageBucket: "schoolgrades-9a12b.firebasestorage.app",
+      messagingSenderId: "661700240078",
+      appId: "1:661700240078:web:c90746f008dc468b22269f",
+      measurementId: "G-VYPC1L17JD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.searchGrade = async function() {
+        const nameInput = document.getElementById('searchName').value.trim();
+        const idInput = document.getElementById('searchId').value.trim();
         const resultBox = document.getElementById('resultBox');
         const errorMsg = document.getElementById('errorMsg');
 
         resultBox.style.display = 'none';
-        errorMsg.innerHTML = '';
+        errorMsg.style.display = 'none';
 
-        if (!sName || !sID) {
-            errorMsg.innerHTML = 'الرجاء إدخال الاسم ورقم القيد بشكل صحيح.';
+        if(!nameInput || !idInput) {
+            alert("الرجاء إدخال اسم الطالب ورقم القيد للاستعلام.");
             return;
         }
 
-        let grades = JSON.parse(localStorage.getItem('schoolGrades')) || [];
-        
-        // البحث عن الطالب بالاسم ورقم القيد
-        const student = grades.find(item => item.name === sName && item.id === sID);
+        try {
+            const querySnapshot = await getDocs(collection(db, "grades"));
+            let found = false;
 
-        if (student) {
-            document.getElementById('resName').innerText = student.name;
-            document.getElementById('resSubject').innerText = student.subject;
-            document.getElementById('resTeacher').innerText = student.teacher;
-            document.getElementById('resCW').innerText = student.courseWork;
-            document.getElementById('resFE').innerText = student.finalExam;
-            document.getElementById('resTotal').innerText = student.total;
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                // مقارنة الاسم ورقم القيد
+                if(data.studentId === idInput && data.studentName.includes(nameInput)) {
+                    document.getElementById('resName').innerText = data.studentName;
+                    document.getElementById('resId').innerText = data.studentId;
+                    document.getElementById('resSubject').innerText = data.subjectName || 'غير متوفر';
+                    document.getElementById('resCourseWork').innerText = data.courseWork;
+                    document.getElementById('resFinal').innerText = data.finalExam;
+                    document.getElementById('resTotal').innerText = data.total;
+                    
+                    resultBox.style.display = 'block';
+                    found = true;
+                }
+            });
 
-            resultBox.style.display = 'block';
-        } else {
-            errorMsg.innerHTML = 'عذراً، لم يتم العثور على نتيجة بهذا الاسم أو رقم القيد خاطئ، أو لم يتم رصد الدرجة بعد.';
+            if(!found) {
+                errorMsg.style.display = 'block';
+            }
+        } catch (e) {
+            alert("حدث خطأ في الاتصال بقاعدة البيانات: " + e.message);
         }
     }
 </script>
