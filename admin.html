@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم الأستاذ - رصد وإدارة الدرجات</title>
+    <title>لوحة تحكم المعلم - رصد الدرجات</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: Tahoma, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 5px; width: 100%; font-size: 16px; cursor: pointer; }
+        button { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 5px; width: 100%; font-size: 16px; cursor: pointer; margin-top: 10px; }
         button:hover { background-color: #218838; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        table, th, td { border: 1px solid #ddd; }
-        th, td { padding: 10px; text-align: center; }
-        th { background-color: #f2f2f2; }
-        .btn-delete { background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
-        .btn-delete:hover { background-color: #c82333; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #007bff; color: white; }
+        .delete-btn { background-color: #dc3545; padding: 5px 10px; font-size: 14px; }
+        .delete-btn:hover { background-color: #c82333; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📊 لوحة تحكم الأستاذ المخصصة</h2>
+    <h2>لوحة تحكم المعلم - رصد درجات الطلاب</h2>
     
     <div class="form-group">
         <label>اسم الأستاذ:</label>
@@ -32,115 +31,134 @@
     </div>
 
     <div class="form-group">
-        <label>اسم المادة التي تدرسها:</label>
-        <input type="text" id="subjectName" placeholder="مثال: رياضيات، لغة عربية...">
+        <label>المادة الدراسية:</label>
+        <input type="text" id="subjectName" placeholder="مثال: الرياضيات">
     </div>
 
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
     <div class="form-group">
-        <label>اسم الطالب الجديد:</label>
+        <label>اسم الطالب:</label>
         <input type="text" id="studentName" placeholder="أدخل اسم الطالب الكامل">
     </div>
 
     <div class="form-group">
-        <label>رقم قيد الطالب (كلمة المرور الخاصة به):</label>
-        <input type="text" id="studentID" placeholder="أدخل رقم القيد أو الرقم التعريفي">
+        <label>رقم القيد (الرقم التعريفي):</label>
+        <input type="text" id="studentId" placeholder="مثال: 1001">
     </div>
 
     <div class="form-group">
-        <label>أعمال السنة (من 40):</label>
-        <input type="number" id="courseWork" min="0" max="40" placeholder="أدخل درجة أعمال السنة">
+        <label>أعمال السنة:</label>
+        <input type="number" id="courseWork" placeholder="من 40">
     </div>
 
     <div class="form-group">
-        <label>الامتحان النهائي (من 60):</label>
-        <input type="number" id="finalExam" min="0" max="60" placeholder="أدخل درجة الامتحان النهائي">
+        <label>الامتحان النهائي:</label>
+        <input type="number" id="finalExam" placeholder="من 60">
     </div>
 
-    <button onclick="saveGrade()">حفظ ورصد الدرجة</button>
+    <button onclick="saveGrade()">حفظ ورصد الدرجة سحابياً</button>
 
-    <h3>📋 سجل درجات الطلاب في مادتك</h3>
+    <h3 style="margin-top: 30px;">الطلاب المسجلون سحابياً:</h3>
     <table>
         <thead>
             <tr>
-                <th>اسم الطالب</th>
                 <th>رقم القيد</th>
-                <th>أعمال السنة</th>
-                <th>النهائي</th>
-                <th>المجموع (من 100)</th>
+                <th>اسم الطالب</th>
+                <th>المادة</th>
+                <th>المجموع</th>
                 <th>إجراء</th>
             </tr>
         </thead>
         <tbody id="gradesTableBody">
-            <!-- سيتم تعبئة البيانات تلقائياً -->
+            <!-- سيتم تعبئتها تلقائياً من قاعدة البيانات -->
         </tbody>
     </table>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", loadGrades);
+<!-- ربط فايربيس (Firebase SDKs) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    function saveGrade() {
+    // إعدادات مشروعك السحابي من فايربيس
+    const firebaseConfig = {
+      apiKey: "AIzaSyAkKRCEo0GUEdLQ94LUD18ctn2oJX6CNZM",
+      authDomain: "schoolgrades-9a12b.firebaseapp.com",
+      projectId: "schoolgrades-9a12b",
+      storageBucket: "schoolgrades-9a12b.firebasestorage.app",
+      messagingSenderId: "661700240078",
+      appId: "1:661700240078:web:c90746f008dc468b22269f",
+      measurementId: "G-VYPC1L17JD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.saveGrade = async function() {
         const teacher = document.getElementById('teacherName').value;
         const subject = document.getElementById('subjectName').value;
-        const sName = document.getElementById('studentName').value;
-        const sID = document.getElementById('studentID').value;
-        const cWork = parseFloat(document.getElementById('courseWork').value) || 0;
-        const fExam = parseFloat(document.getElementById('finalExam').value) || 0;
+        const name = document.getElementById('studentName').value;
+        const id = document.getElementById('studentId').value;
+        const coursework = parseFloat(document.getElementById('courseWork').value) || 0;
+        const final = parseFloat(document.getElementById('finalExam').value) || 0;
 
-        if (!teacher || !subject || !sName || !sID) {
-            alert('الرجاء إكمال جميع البيانات الأساسية (اسم الأستاذ، المادة، اسم الطالب، ورقم القيد)');
+        if(!name || !id || !subject) {
+            alert("الرجاء إدخال اسم الطالب، رقم القيد، والمادة على الأقل!");
             return;
         }
 
-        let grades = JSON.parse(localStorage.getItem('schoolGrades')) || [];
-        
-        // التحقق إذا كان الطالب موجود مسبقاً لتحديث درجته أو إضافته
-        grades.push({
-            teacher: teacher,
-            subject: subject,
-            name: sName,
-            id: sID,
-            courseWork: cWork,
-            finalExam: fExam,
-            total: cWork + fExam
-        });
-
-        localStorage.setItem('schoolGrades', JSON.stringify(grades));
-        alert('تم حفظ ورصد الدرجة بنجاح!');
-        
-        // تفريغ حقول الطالب فقط لإدخال طالب آخر
-        document.getElementById('studentName').value = '';
-        document.getElementById('studentID').value = '';
-        document.getElementById('courseWork').value = '';
-        document.getElementById('finalExam').value = '';
-
-        loadGrades();
+        try {
+            await addDoc(collection(db, "grades"), {
+                teacherName: teacher,
+                subjectName: subject,
+                studentName: name,
+                studentId: id,
+                courseWork: coursework,
+                finalExam: final,
+                total: coursework + final
+            });
+            alert("تم حفظ ورصد الدرجة بنجاح في السحابة!");
+            document.getElementById('studentName').value = '';
+            document.getElementById('studentId').value = '';
+            document.getElementById('courseWork').value = '';
+            document.getElementById('finalExam').value = '';
+            loadGrades();
+        } catch (e) {
+            alert("حدث خطأ أثناء الحفظ: " + e.message);
+        }
     }
 
-    function loadGrades() {
-        let grades = JSON.parse(localStorage.getItem('schoolGrades')) || [];
-        let tbody = document.getElementById('gradesTableBody');
+    async function loadGrades() {
+        const tbody = document.getElementById('gradesTableBody');
         tbody.innerHTML = '';
-
-        grades.forEach((item, index) => {
-            let row = `<tr>
-                <td>${item.name}</td>
-                <td>${item.id}</td>
-                <td>${item.courseWork}</td>
-                <td>${item.finalExam}</td>
-                <td><b>${item.total}</b></td>
-                <td><button class="btn-delete" onclick="deleteGrade(${index})">حذف</button></td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
+        try {
+            const querySnapshot = await getDocs(collection(db, "grades"));
+            querySnapshot.forEach((documentSnapshot) => {
+                let data = documentSnapshot.data();
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${data.studentId}</td>
+                    <td>${data.studentName}</td>
+                    <td>${data.subjectName || '-'}</td>
+                    <td>${data.total}</td>
+                    <td><button class="delete-btn" onclick="deleteRecord('${documentSnapshot.id}')">حذف</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            console.error("خطأ في جلب البيانات: ", e);
+        }
     }
 
-    function deleteGrade(index) {
-        let grades = JSON.parse(localStorage.getItem('schoolGrades')) || [];
-        grades.splice(index, 1);
-        localStorage.setItem('schoolGrades', JSON.stringify(grades));
-        loadGrades();
+    window.deleteRecord = async function(docId) {
+        if(confirm("هل أنت متأكد من حذف هذه الدرجة؟")) {
+            await deleteDoc(doc(db, "grades", docId));
+            loadGrades();
+        }
     }
+
+    window.onload = loadGrades;
 </script>
 
 </body>
