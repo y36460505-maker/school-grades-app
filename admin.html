@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الأستاذ - رصد وإدارة الدرجات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 650px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #34495e; }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        select:focus, input:focus { border-color: #3498db; }
+        .btn-container { display: flex; gap: 10px; margin-top: 20px; }
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-save { background-color: #27ae60; }
+        .btn-save:hover { background-color: #219653; }
+        .success-msg {
+            display: none;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .manage-section {
+            margin-top: 30px;
+            border-top: 2px solid #ecf0f1;
+            padding-top: 20px;
+            text-align: right;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th { background-color: #2980b9; color: white; }
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-delete:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>👨‍🏫 لوحة تحكم الأستاذ المخصصة</h2>
+    
+    <div class="form-group">
+        <label for="teacherName">اسم الأستاذ:</label>
+        <input type="text" id="teacherName" placeholder="أدخل اسمك الكريم" oninput="loadTeacherData()">
+    </div>
+
+    <div class="form-group">
+        <label for="subjectName">اسم المادة التي تدرسها:</label>
+        <input type="text" id="subjectName" placeholder="مثال: رياضيات، لغة عربية..." oninput="loadTeacherData()">
+    </div>
+
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+    <div class="form-group">
+        <label for="studentName">اختر الطالب لتسجيل درجته:</label>
+        <select id="studentName">
+            <option value="">-- اختر الطالب --</option>
+            <option value="يقين">يقين</option>
+            <option value="سالمة">سالمة</option>
+            <option value="نهى">نهى</option>
+            <option value="وداد">وداد</option>
+            <option value="مشاعل">مشاعل</option>
+            <option value="إسلام">إسلام</option>
+            <option value="عبدالباسط">عبدالباسط</option>
+            <option value="شاهين">شاهين</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="workGrade">أعمال السنة (من 40):</label>
+        <input type="number" id="workGrade" placeholder="أدخل درجة أعمال السنة">
+    </div>
+
+    <div class="form-group">
+        <label for="examGrade">الامتحان النهائي (من 60):</label>
+        <input type="number" id="examGrade" placeholder="أدخل درجة الامتحان النهائي">
+    </div>
+
+    <div class="btn-container">
+        <button class="btn-save" onclick="saveGrade()">💾 حفظ ورصد الدرجة</button>
+    </div>
+
+    <div id="successMsg" class="success-msg">تم حفظ ورصد الدرجة بنجاح!</div>
+
+    <!-- جدول إدارة مواد هذا الأستاذ فقط -->
+    <div class="manage-section">
+        <h3>📋 سجل درجات الطلاب في مادتك (للتعديل أو الحذف)</h3>
+        <table id="teacherTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>الطالب</th>
+                    <th>المجموع (100)</th>
+                    <th>الإجراء</th>
+                </tr>
+            </thead>
+            <tbody id="teacherTableBody">
+                <!-- ستظهر درجات الطلاب الذين رصددهم هذا الأستاذ فقط هنا -->
+            </tbody>
+        </table>
+        <p id="noTeacherData" style="color: #7f8c8d; text-align: center;">الرجاء إدخال "اسم الأستاذ" و"اسم المادة" لعرض وسجل الطلاب.</p>
+    </div>
+</div>
+
+<script>
+    // دالة لعرض الدرجات الخاصة بهذا الأستاذ ومادته فقط
+    function loadTeacherData() {
+        var teacher = document.getElementById("teacherName").value.trim();
+        var subject = document.getElementById("subjectName").value.trim();
+        var table = document.getElementById("teacherTable");
+        var tbody = document.getElementById("teacherTableBody");
+        var noDataP = document.getElementById("noTeacherData");
+
+        if (teacher === "" || subject === "") {
+            table.style.display = "none";
+            noDataP.style.display = "block";
+            noDataP.innerText = 'الرجاء إدخال "اسم الأستاذ" و"اسم المادة" لعرض السجل الخاص بك.';
+            return;
+        }
+
+        // مفتاح تخزين خاص بهذا الأستاذ ومادته فقط
+        var storageKey = "teacher_" + teacher + "_" + subject;
+        var savedData = localStorage.getItem(storageKey);
+
+        if (savedData) {
+            var records = JSON.parse(savedData);
+            tbody.innerHTML = "";
+
+            records.forEach(function(item, index) {
+                var row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><b>${item.student}</b></td>
+                    <td>${item.total}</td>
+                    <td><button class="btn-delete" onclick="deleteRecord(${index})">🗑️ حذف</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            table.style.display = "table";
+            noDataP.style.display = "none";
+        } else {
+            table.style.display = "none";
+            noDataP.style.display = "block";
+            noDataP.innerText = "لا توجد درجات مرصودة من قبلك لهذه المادة حتى الآن.";
+        }
+    }
+
+    function saveGrade() {
+        var teacher = document.getElementById("teacherName").value.trim();
+        var subject = document.getElementById("subjectName").value.trim();
+        var student = document.getElementById("studentName").value;
+        var work = parseFloat(document.getElementById("workGrade").value) || 0;
+        var exam = parseFloat(document.getElementById("examGrade").value) || 0;
+
+        if(teacher === "" || subject === "" || student === "") {
+            alert("الرجاء التأكد من إدخال اسم الأستاذ، اسم المادة، واختيار الطالب!");
+            return;
+        }
+
+        var total = work + exam;
+        var status = total >= 50 ? "ناجح" : "راسب";
+
+        var gradeRecord = {
+            teacher: teacher,
+            subject: subject,
+            student: student,
+            work: work,
+            exam: exam,
+            total: total,
+            status: status
+        };
+
+        var storageKey = "teacher_" + teacher + "_" + subject;
+        var existingData = localStorage.getItem(storageKey);
+        var records = existingData ? JSON.parse(existingData) : [];
+
+        // التحقق إذا كان الطالب مسجل مسبقاً لهذه المادة لنفس الأستاذ (لتحديث درجته مباشرة بدل تكراره)
+        var existingIndex = records.findIndex(r => r.student === student);
+        if (existingIndex !== -1) {
+            records[existingIndex] = gradeRecord; // تحديث
+        } else {
+            records.push(gradeRecord); // إضافة جديدة
+        }
+
+        localStorage.setItem(storageKey, JSON.stringify(records));
+
+        // تحديث المجموع الشامل للطالب لكي تراه صفحة الطالب (index.html)
+        updateGlobalStudentGrades(student, teacher, subject, gradeRecord);
+
+        // تحديث الجدول وإظهار رسالة النجاح
+        loadTeacherData();
+
+        var msg = document.getElementById("successMsg");
+        msg.style.display = "block";
+        setTimeout(function() {
+            msg.style.display = "none";
+        }, 3000);
+
+        document.getElementById("studentName").value = "";
+        document.getElementById("workGrade").value = "";
+        document.getElementById("examGrade").value = "";
+    }
+
+    // دالة لتحديث درجات الطالب الشاملة في صفحة الطالب
+    function updateGlobalStudentGrades(studentName, teacher, subject, newRecord) {
+        var globalKey = "grades_" + studentName;
+        var globalData = localStorage.getItem(globalKey);
+        var globalList = globalData ? JSON.parse(globalData) : [];
+
+        // البحث إذا كانت المادة موجودة مسبقاً لنفس الأستاذ لتحديثها أو إضافتها
+        var index = globalList.findIndex(item => item.teacher === teacher && item.subject === subject);
+        if (index !== -1) {
+            globalList[index] = newRecord;
+        } else {
+            globalList.push(newRecord);
+        }
+
+        localStorage.setItem(globalKey, JSON.stringify(globalList));
+    }
+
+    // دالة حذف سجل خاص بهذا الأستاذ
+    function deleteRecord(index) {
+        var teacher = document.getElementById("teacherName").value.trim();
+        var subject = document.getElementById("subjectName").value.trim();
+        var storageKey = "teacher_" + teacher + "_" + subject;
+        var savedData = localStorage.getItem(storageKey);
+
+        if (savedData) {
+            var records = JSON.parse(savedData);
+            var deletedStudent = records[index].student;
+
+            // حذف من سجل الأستاذ
+            records.splice(index, 1);
+            localStorage.setItem(storageKey, JSON.stringify(records));
+
+            // حذف من السجل العام للطالب أيضاً
+            removeFromGlobalStudentGrades(deletedStudent, teacher, subject);
+
+            loadTeacherData();
+            alert("تم حذف الدرجة بنجاح!");
+        }
+    }
+
+    function removeFromGlobalStudentGrades(studentName, teacher, subject) {
+        var globalKey = "grades_" + studentName;
+        var globalData = localStorage.getItem(globalKey);
+        if (globalData) {
+            var globalList = JSON.parse(globalData);
+            var filteredList = globalList.filter(item => !(item.teacher === teacher && item.subject === subject));
+            localStorage.setItem(globalKey, JSON.stringify(filteredList));
+        }
+    }
+</script>
+
+</body>
+</html>

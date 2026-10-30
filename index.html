@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة استعلام نتائج الطلاب</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 700px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        label { font-weight: bold; display: block; margin-bottom: 8px; color: #34495e; }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #2471a3; }
+        .result-container {
+            display: none;
+            margin-top: 20px;
+            text-align: right;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status-pass { color: #27ae60; font-weight: bold; }
+        .status-fail { color: #e74c3c; font-weight: bold; }
+        .error-msg { color: #c0392b; font-weight: bold; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎓 بوابة نتائج الطلاب الشاملة</h2>
+    
+    <div class="form-group">
+        <label for="studentSelect">اختر اسم الطالب:</label>
+        <select id="studentSelect">
+            <option value="">-- اختر الاسم --</option>
+            <option value="يقين">يقين</option>
+            <option value="سالمة">سالمة</option>
+            <option value="نهى">نهى</option>
+            <option value="وداد">وداد</option>
+            <option value="مشاعل">مشاعل</option>
+            <option value="إسلام">إسلام</option>
+            <option value="عبدالباسط">عبدالباسط</option>
+            <option value="شاهين">شاهين</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="studentID">أدخل رقم القيد (كلمة المرور):</label>
+        <input type="password" id="studentID" placeholder="أدخل رقم القيد الخاص بك">
+    </div>
+
+    <button onclick="checkResult()">عرض كشف الدرجات</button>
+
+    <div id="errorMsg" class="error-msg">رقم القيد غير صحيح أو لم يتم رصد درجات بعد!</div>
+
+    <!-- جدول عرض نتائج المواد واسم الأستاذ -->
+    <div id="resultContainer" class="result-container">
+        <h3 id="studentTitle" style="color: #2980b9; margin-top:0; text-align:center;"></h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>المادة</th>
+                    <th>الأستاذ</th>
+                    <th>أعمال السنة (40)</th>
+                    <th>النهائي (60)</th>
+                    <th>المجموع (100)</th>
+                    <th>النتيجة</th>
+                </tr>
+            </thead>
+            <tbody id="gradesTableBody">
+                <!-- ستتم تعبئة الجدول تلقائياً -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const studentIDs = {
+        "يقين": "101",
+        "سالمة": "102",
+        "نهى": "103",
+        "وداد": "104",
+        "مشاعل": "105",
+        "إسلام": "106",
+        "عبدالباسط": "107",
+        "شاهين": "108"
+    };
+
+    function checkResult() {
+        var select = document.getElementById("studentSelect");
+        var studentName = select.value;
+        var enteredID = document.getElementById("studentID").value;
+        var resultContainer = document.getElementById("resultContainer");
+        var errorMsg = document.getElementById("errorMsg");
+
+        if (studentName === "" || enteredID === "") {
+            alert("الرجاء اختيار الاسم وإدخال رقم القيد!");
+            return;
+        }
+
+        if (studentIDs[studentName] === enteredID) {
+            var savedData = localStorage.getItem("grades_" + studentName);
+
+            if (savedData) {
+                var gradesList = JSON.parse(savedData);
+                var tableBody = document.getElementById("gradesTableBody");
+                tableBody.innerHTML = "";
+
+                gradesList.forEach(function(item) {
+                    var row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td><b>${item.subject}</b></td>
+                        <td>${item.teacher}</td>
+                        <td>${item.work}</td>
+                        <td>${item.exam}</td>
+                        <td><b>${item.total}</b></td>
+                        <td class="${item.status === 'ناجح' ? 'status-pass' : 'status-fail'}">${item.status}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+                document.getElementById("studentTitle").innerText = "كشف درجات الطالب/ة: " + studentName;
+                resultContainer.style.display = "block";
+                errorMsg.style.display = "none";
+            } else {
+                resultContainer.style.display = "none";
+                errorMsg.innerText = "عذراً، لم يتم رصد أي مواد لهذا الطالب حتى الآن.";
+                errorMsg.style.display = "block";
+            }
+        } else {
+            resultContainer.style.display = "none";
+            errorMsg.innerText = "رقم القيد خطأ! تأكد من الرقم الخاص بك.";
+            errorMsg.style.display = "block";
+        }
+    }
+</script>
+
+</body>
+</html>
